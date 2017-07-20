@@ -1717,6 +1717,12 @@ case $uname_s in
 	test_set_prereq GREP_STRIPS_CR
 	test_set_prereq WINDOWS
 	GIT_TEST_CMP=mingw_test_cmp
+	if ! type iconv >/dev/null 2>&1
+	then
+		iconv () {
+			test-tool iconv "$@"
+		}
+	fi
 	;;
 *CYGWIN*)
 	test_set_prereq POSIXPERM
