@@ -730,6 +730,12 @@ static int add(int ac, const char **av, const char *prefix)
 	if (opts.orphan) {
 		branch = new_branch;
 	} else if (!lookup_commit_reference_by_name(branch)) {
+		advise_if_enabled(ADVICE_WORKTREE_ADD_ORPHAN,
+			_("If you meant to create a worktree containing a new orphan branch\n"
+			"(branch with no commits) for this repository, you can do so\n"
+			"using the --orphan option:\n"
+			"\n"
+			"	git worktree add --orphan %s %s\n"), new_branch, path);
 		die(_("invalid reference: %s"), branch);
 	} else if (new_branch) {
 		struct child_process cp = CHILD_PROCESS_INIT;

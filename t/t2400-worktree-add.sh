@@ -378,6 +378,24 @@ test_expect_success '"add" worktree with orphan branch, lock, and reason' '
 	test_cmp expect .git/worktrees/orphan-with-lock-reason/locked
 '
 
+# Note: Quoted arguments containing spaces are not supported.
+test_wt_add_empty_repo_orphan_hint () {
+	local context="$1" &&
+	shift &&
+	local opts="$*" &&
+	test_expect_success "'worktree add' show orphan hint in empty repo w/ $context" '
+		test_when_finished "rm -rf empty_repo" &&
+		GIT_DIR="empty_repo" git init --bare &&
+		test_must_fail git -C empty_repo worktree add $opts foobar/ 2>actual &&
+		! grep "error: unknown switch" actual &&
+		grep "hint: If you meant to create a worktree containing a new orphan branch" actual
+	'
+}
+
+test_wt_add_empty_repo_orphan_hint 'DWIM'
+test_wt_add_empty_repo_orphan_hint '-b' -b foobar_branch
+test_wt_add_empty_repo_orphan_hint '-B' -B foobar_branch
+
 test_expect_success 'local clone from linked checkout' '
 	git clone --local here here-clone &&
 	( cd here-clone && git fsck )
