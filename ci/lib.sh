@@ -103,6 +103,7 @@ then
 	test darwin != "$CI_OS_NAME" || CI_OS_NAME=osx
 	CI_REPO_SLUG="$(expr "$BUILD_REPOSITORY_URI" : '.*/\([^/]*/[^/]*\)$')"
 	CC="${CC:-gcc}"
+	DONT_SKIP_TAGS=t
 
 	# use a subdirectory of the cache dir (because the file share is shared
 	# among *all* phases)
