@@ -785,15 +785,30 @@ if (@rev_list_opts) {
 	push @files, $repo->command('format-patch', '-o', File::Temp::tempdir(CLEANUP => 1), @rev_list_opts);
 }
 
-@files = handle_backup_files(@files);
+if (defined $sender) {
+	$sender =~ s/^\s+|\s+$//g;
+	($sender) = expand_aliases($sender);
+} else {
+	$sender = $repoauthor->() || $repocommitter->() || '';
+}
+
+# $sender could be an already sanitized address
+# (e.g. sendemail.from could be manually sanitized by user).
+# But it's a no-op to run sanitize_address on an already sanitized address.
+$sender = sanitize_address($sender);
+
+$time = time - scalar $#files;
 
 if ($validate) {
 	foreach my $f (@files) {
 		unless (-p $f) {
+		        pre_process_file($f, 1);
 			validate_patch($f, $target_xfer_encoding);
 		}
 	}
 }
+
+@files = handle_backup_files(@files);
 
 if (@files) {
 	unless ($quiet) {
@@ -1043,18 +1058,6 @@ if (!$force) {
 	}
 }
 
-if (defined $sender) {
-	$sender =~ s/^\s+|\s+$//g;
-	($sender) = expand_aliases($sender);
-} else {
-	$sender = $repoauthor->() || $repocommitter->() || '';
-}
-
-# $sender could be an already sanitized address
-# (e.g. sendemail.from could be manually sanitized by user).
-# But it's a no-op to run sanitize_address on an already sanitized address.
-$sender = sanitize_address($sender);
-
 my $to_whom = __("To whom should the emails be sent (if anyone)?");
 my $prompting = 0;
 if (!@initial_to && !defined $to_cmd) {
@@ -1213,10 +1216,6 @@ sub make_message_id {
 	$message_id = sprintf($message_id_template, $uniq, $du_part);
 	#print "new message id = $message_id\n"; # Was useful for debugging
 }
-
-
-
-$time = time - scalar $#files;
 
 sub unquote_rfc2047 {
 	local ($_) = @_;
@@ -2101,11 +2100,20 @@ sub validate_patch {
 			chdir($repo->wc_path() or $repo->repo_path())
 				or die("chdir: $!");
 			local $ENV{"GIT_DIR"} = $repo->repo_path();
+
+			my ($recipients_ref, $to, $date, $gitversion, $cc, $ccline, $header) = gen_header();
+
+			require File::Temp;
+			my ($header_filehandle, $header_filename) = File::Temp::tempfile(
+                            ".gitsendemail.header.XXXXXX", DIR => $repo->repo_path());
+			print $header_filehandle $header;
+
 			my @cmd = ("git", "hook", "run", "--ignore-missing",
 				    $hook_name, "--");
-			my @cmd_msg = (@cmd, "<patch>");
-			my @cmd_run = (@cmd, $target);
+			my @cmd_msg = (@cmd, "<patch>", "<header>");
+			my @cmd_run = (@cmd, $target, $header_filename);
 			$hook_error = system_or_msg(\@cmd_run, undef, "@cmd_msg");
+			unlink($header_filehandle);
 			chdir($cwd_save) or die("chdir: $!");
 		}
 		if ($hook_error) {
