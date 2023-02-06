@@ -14,7 +14,7 @@ jobs:
     displayName: 'clone git-sdk-64'
   - bash: git clone --depth=1 --single-branch -b main https://github.com/git-for-windows/build-extra
     displayName: 'clone build-extra'
-  - bash: sh -x ./build-extra/please.sh create-sdk-artifact --sdk=git-sdk-64.git --out=git-sdk-64-minimal minimal-sdk
+  - bash: sh -x ./build-extra/please.sh create-sdk-artifact --architecture=x86_64 --sdk=git-sdk-64.git --out=git-sdk-64-minimal minimal-sdk
     displayName: 'build git-sdk-64-minimal-sdk'
   - bash: |
       # Let Git ignore the SDK and the test-cache
@@ -106,7 +106,7 @@ jobs:
     displayName: 'clone git-sdk-64'
   - bash: git clone --depth=1 --single-branch -b main https://github.com/git-for-windows/build-extra
     displayName: 'clone build-extra'
-  - bash: sh -x ./build-extra/please.sh create-sdk-artifact --sdk=git-sdk-64.git --out=git-sdk-64-minimal minimal-sdk
+  - bash: sh -x ./build-extra/please.sh create-sdk-artifact --architecture=x86_64 --sdk=git-sdk-64.git --out=git-sdk-64-minimal minimal-sdk
     displayName: 'build git-sdk-64-minimal-sdk'
   - bash: |
       # Let Git ignore the SDK and the test-cache
