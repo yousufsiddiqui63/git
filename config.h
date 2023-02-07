@@ -477,20 +477,22 @@ int git_configset_get_value_multi(struct config_set *cs, const char *key,
  */
 void git_configset_clear(struct config_set *cs);
 
-/*
+/**
  * These functions return 1 if not found, and 0 if found, leaving the found
- * value in the 'dest' pointer.
+ * value in the 'dest' pointer. On error a negative value is returned.
+ *
+ * The functions that return a single value (i.e. not
+ * *_get_*multi*()) will return the highest-priority value for the
+ * configuration variable `key`, i.e. in the case where we have
+ * multiple values the last value found.
  */
 
 RESULT_MUST_BE_USED
 int git_configset_get(struct config_set *cs, const char *key);
 
 /*
- * Finds the highest-priority value for the configuration variable `key`
- * and config set `cs`, stores the pointer to it in `value` and returns 0.
- * When the configuration variable `key` is not found, returns 1 without
- * touching `value`. The caller should not free or modify `value`, as it
- * is owned by the cache.
+ * The caller should not free or modify `value`, as it is owned by the
+ * cache.
  */
 int git_configset_get_value(struct config_set *cs, const char *key, const char **dest);
 

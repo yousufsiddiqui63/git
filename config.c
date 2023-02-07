@@ -2449,86 +2449,93 @@ int git_configset_get(struct config_set *cs, const char *key)
 int git_configset_get_string(struct config_set *cs, const char *key, char **dest)
 {
 	const char *value;
-	if (!git_configset_get_value(cs, key, &value))
-		return git_config_string((const char **)dest, key, value);
-	else
-		return 1;
+	int ret;
+
+	if ((ret = git_configset_get_value(cs, key, &value)))
+		return ret;
+	return git_config_string((const char **)dest, key, value);
 }
 
 static int git_configset_get_string_tmp(struct config_set *cs, const char *key,
 					const char **dest)
 {
 	const char *value;
-	if (!git_configset_get_value(cs, key, &value)) {
-		if (!value)
-			return config_error_nonbool(key);
-		*dest = value;
-		return 0;
-	} else {
-		return 1;
-	}
+	int ret;
+
+	if ((ret = git_configset_get_value(cs, key, &value)))
+		return ret;
+	if (!value)
+		return config_error_nonbool(key);
+	*dest = value;
+	return 0;
 }
 
 int git_configset_get_int(struct config_set *cs, const char *key, int *dest)
 {
 	const char *value;
-	if (!git_configset_get_value(cs, key, &value)) {
-		*dest = git_config_int(key, value);
-		return 0;
-	} else
-		return 1;
+	int ret;
+
+	if ((ret = git_configset_get_value(cs, key, &value)))
+		return ret;
+	*dest = git_config_int(key, value);
+	return 0;
 }
 
 int git_configset_get_ulong(struct config_set *cs, const char *key, unsigned long *dest)
 {
 	const char *value;
-	if (!git_configset_get_value(cs, key, &value)) {
-		*dest = git_config_ulong(key, value);
-		return 0;
-	} else
-		return 1;
+	int ret;
+
+	if ((ret = git_configset_get_value(cs, key, &value)))
+		return ret;
+	*dest = git_config_ulong(key, value);
+	return 0;
 }
 
 int git_configset_get_bool(struct config_set *cs, const char *key, int *dest)
 {
 	const char *value;
-	if (!git_configset_get_value(cs, key, &value)) {
-		*dest = git_config_bool(key, value);
-		return 0;
-	} else
-		return 1;
+	int ret;
+
+	if ((ret = git_configset_get_value(cs, key, &value)))
+		return ret;
+	*dest = git_config_bool(key, value);
+	return 0;
 }
 
 int git_configset_get_bool_or_int(struct config_set *cs, const char *key,
 				int *is_bool, int *dest)
 {
 	const char *value;
-	if (!git_configset_get_value(cs, key, &value)) {
-		*dest = git_config_bool_or_int(key, value, is_bool);
-		return 0;
-	} else
-		return 1;
+	int ret;
+
+	if ((ret = git_configset_get_value(cs, key, &value)))
+		return ret;
+	*dest = git_config_bool_or_int(key, value, is_bool);
+	return 0;
 }
 
 int git_configset_get_maybe_bool(struct config_set *cs, const char *key, int *dest)
 {
 	const char *value;
-	if (!git_configset_get_value(cs, key, &value)) {
-		*dest = git_parse_maybe_bool(value);
-		if (*dest == -1)
-			return -1;
-		return 0;
-	} else
-		return 1;
+	int ret;
+
+	if ((ret = git_configset_get_value(cs, key, &value)))
+		return ret;
+	*dest = git_parse_maybe_bool(value);
+	if (*dest == -1)
+		return -1;
+	return 0;
 }
 
 int git_configset_get_pathname(struct config_set *cs, const char *key, const char **dest)
 {
 	const char *value;
-	if (!git_configset_get_value(cs, key, &value))
-		return git_config_pathname(dest, key, value);
-	else
-		return 1;
+	int ret;
+
+	if ((ret = git_configset_get_value(cs, key, &value)))
+		return ret;
+	return git_config_pathname(dest, key, value);
 }
 
 /* Functions use to read configuration from a repository */
@@ -2775,9 +2782,11 @@ int git_config_get_expiry_in_days(const char *key, timestamp_t *expiry, timestam
 	const char *expiry_string;
 	intmax_t days;
 	timestamp_t when;
+	int ret;
 
-	if (git_config_get_string_tmp(key, &expiry_string))
-		return 1; /* no such thing */
+	if ((ret = git_config_get_string_tmp(key, &expiry_string)))
+		/* no such thing, or git_config_parse_key() failure etc. */
+		return ret;
 
 	if (git_parse_signed(expiry_string, &days, maximum_signed_value_of_type(int))) {
 		const int scale = 86400;
@@ -2820,6 +2829,7 @@ int git_config_get_max_percent_split_change(void)
 int git_config_get_index_threads(int *dest)
 {
 	int is_bool, val;
+	int ret;
 
 	val = git_env_ulong("GIT_TEST_INDEX_THREADS", 0);
 	if (val) {
@@ -2827,15 +2837,14 @@ int git_config_get_index_threads(int *dest)
 		return 0;
 	}
 
-	if (!git_config_get_bool_or_int("index.threads", &is_bool, &val)) {
-		if (is_bool)
-			*dest = val ? 0 : 1;
-		else
-			*dest = val;
-		return 0;
-	}
-
-	return 1;
+	if ((ret = git_config_get_bool_or_int("index.threads", &is_bool,
+					      &val)))
+		return ret;
+	if (is_bool)
+		*dest = val ? 0 : 1;
+	else
+		*dest = val;
+	return 0;
 }
 
 NORETURN
