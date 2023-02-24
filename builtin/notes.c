@@ -220,7 +220,8 @@ static void insert_separator(struct strbuf *message, size_t pos)
 		strbuf_insertf(message, pos, "%s%s", separator, "\n");
 }
 
-static void parse_messages(struct string_list *messages, struct note_data *d)
+/* Consume messages and append them into d->buf */
+static void concat_messages(struct string_list *messages, struct note_data *d)
 {
 	size_t i;
 	for (i = 0; i < messages->nr; i++) {
@@ -231,6 +232,7 @@ static void parse_messages(struct string_list *messages, struct note_data *d)
 		strbuf_stripspace(&d->buf, 0);
 		d->given = 1;
 	}
+	string_list_clear(messages, 0);
 }
 
 static int parse_msg_arg(const struct option *opt, const char *arg, int unset)
@@ -451,7 +453,7 @@ static int add(int argc, const char **argv, const char *prefix)
 		usage_with_options(git_notes_add_usage, options);
 	}
 
-	parse_messages(&messages, &d);
+	concat_messages(&messages, &d);
 	object_ref = argc > 1 ? argv[1] : "HEAD";
 
 	if (get_oid(object_ref, &object))
@@ -622,7 +624,7 @@ static int append_edit(int argc, const char **argv, const char *prefix)
 		usage_with_options(usage, options);
 	}
 
-	parse_messages(&messages, &d);
+	concat_messages(&messages, &d);
 
 	if (d.given && edit)
 		fprintf(stderr, _("The -m/-F/-c/-C options have been deprecated "
