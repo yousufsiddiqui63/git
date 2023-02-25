@@ -278,6 +278,11 @@ test_expect_success 'do not rebase cousins unless asked for' '
 	EOF
 '
 
+test_expect_success '--rebase-merges="" is deprecated' '
+	git rebase --rebase-merges="" HEAD^ 2>actual &&
+	grep deprecated actual
+'
+
 test_expect_success 'refs/rewritten/* is worktree-local' '
 	git worktree add wt &&
 	cat >wt/script-from-scratch <<-\EOF &&
