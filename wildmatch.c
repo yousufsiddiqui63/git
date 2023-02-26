@@ -17,7 +17,7 @@
 				    && strncmp(class, litmatch, len) == 0)
 
 /* Match pattern "p" against "text" */
-static int dowild(const char *p, const char *text, unsigned int flags)
+int wildmatch(const char *p, const char *text, unsigned int flags)
 {
 	char p_ch;
 	const char *pattern = p;
@@ -66,7 +66,7 @@ static int dowild(const char *p, const char *text, unsigned int flags)
 					 * both foo/bar and foo/a/bar.
 					 */
 					if (p[0] == '/' &&
-					    dowild(p + 1, text, flags) == WM_MATCH)
+					    wildmatch(p + 1, text, flags) == WM_MATCH)
 						return WM_MATCH;
 					match_slash = 1;
 				} else /* WM_PATHNAME is set */
@@ -88,10 +88,9 @@ static int dowild(const char *p, const char *text, unsigned int flags)
 				 * with WM_PATHNAME matches the next
 				 * directory
 				 */
-				const char *slash = strchr(text, '/');
-				if (!slash)
+				text = strchr(text, '/');
+				if (!text)
 					return WM_NOMATCH;
-				text = slash;
 				/* the slash is consumed by the top-level for loop */
 				break;
 			}
@@ -121,7 +120,7 @@ static int dowild(const char *p, const char *text, unsigned int flags)
 					if (t_ch != p_ch)
 						return WM_NOMATCH;
 				}
-				if ((matched = dowild(p, text, flags)) != WM_NOMATCH) {
+				if ((matched = wildmatch(p, text, flags)) != WM_NOMATCH) {
 					if (!match_slash || matched != WM_ABORT_TO_STARSTAR)
 						return matched;
 				} else if (!match_slash && t_ch == '/')
@@ -230,10 +229,4 @@ static int dowild(const char *p, const char *text, unsigned int flags)
 	}
 
 	return *text ? WM_NOMATCH : WM_MATCH;
-}
-
-/* Match the "pattern" against the "text" string. */
-int wildmatch(const char *pattern, const char *text, unsigned int flags)
-{
-	return dowild(pattern, text, flags);
 }
