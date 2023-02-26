@@ -28,18 +28,8 @@ typedef unsigned char uchar;
 # define ISASCII(c) isascii(c)
 #endif
 
-#ifdef isblank
-# define ISBLANK(c) (ISASCII(c) && isblank(c))
-#else
-# define ISBLANK(c) ((c) == ' ' || (c) == '\t')
-#endif
-
-#ifdef isgraph
-# define ISGRAPH(c) (ISASCII(c) && isgraph(c))
-#else
-# define ISGRAPH(c) (ISASCII(c) && isprint(c) && !isspace(c))
-#endif
-
+#define ISBLANK(c) (ISASCII(c) && isblank(c))
+#define ISGRAPH(c) (ISASCII(c) && isgraph(c))
 #define ISPRINT(c) (ISASCII(c) && isprint(c))
 #define ISDIGIT(c) (ISASCII(c) && isdigit(c))
 #define ISALNUM(c) (ISASCII(c) && isalnum(c))
