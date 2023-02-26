@@ -14,10 +14,6 @@
 
 typedef unsigned char uchar;
 
-/* What character marks an inverted character class? */
-#define NEGATE_CLASS	'!'
-#define NEGATE_CLASS2	'^'
-
 #define CC_EQ(class, len, litmatch) ((len) == sizeof (litmatch)-1 \
 				    && *(class) == *(litmatch) \
 				    && strncmp((char*)class, litmatch, len) == 0)
@@ -137,12 +133,8 @@ static int dowild(const uchar *p, const uchar *text, unsigned int flags)
 			return WM_ABORT_ALL;
 		case '[':
 			p_ch = *++p;
-#ifdef NEGATE_CLASS2
-			if (p_ch == NEGATE_CLASS2)
-				p_ch = NEGATE_CLASS;
-#endif
 			/* Assign literal 1/0 because of "matched" comparison. */
-			negated = p_ch == NEGATE_CLASS ? 1 : 0;
+			negated = p_ch == '!' || p_ch == '^' ? 1 : 0;
 			if (negated) {
 				/* Inverted character class. */
 				p_ch = *++p;
