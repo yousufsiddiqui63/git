@@ -22,25 +22,6 @@ typedef unsigned char uchar;
 				    && *(class) == *(litmatch) \
 				    && strncmp((char*)class, litmatch, len) == 0)
 
-#if defined STDC_HEADERS || !defined isascii
-# define ISASCII(c) 1
-#else
-# define ISASCII(c) isascii(c)
-#endif
-
-#define ISBLANK(c) (ISASCII(c) && isblank(c))
-#define ISGRAPH(c) (ISASCII(c) && isgraph(c))
-#define ISPRINT(c) (ISASCII(c) && isprint(c))
-#define ISDIGIT(c) (ISASCII(c) && isdigit(c))
-#define ISALNUM(c) (ISASCII(c) && isalnum(c))
-#define ISALPHA(c) (ISASCII(c) && isalpha(c))
-#define ISCNTRL(c) (ISASCII(c) && iscntrl(c))
-#define ISLOWER(c) (ISASCII(c) && islower(c))
-#define ISPUNCT(c) (ISASCII(c) && ispunct(c))
-#define ISSPACE(c) (ISASCII(c) && isspace(c))
-#define ISUPPER(c) (ISASCII(c) && isupper(c))
-#define ISXDIGIT(c) (ISASCII(c) && isxdigit(c))
-
 /* Match pattern "p" against "text" */
 static int dowild(const uchar *p, const uchar *text, unsigned int flags)
 {
@@ -52,9 +33,9 @@ static int dowild(const uchar *p, const uchar *text, unsigned int flags)
 		uchar t_ch, prev_ch;
 		if ((t_ch = *text) == '\0' && p_ch != '*')
 			return WM_ABORT_ALL;
-		if ((flags & WM_CASEFOLD) && ISUPPER(t_ch))
+		if ((flags & WM_CASEFOLD) && isupper(t_ch))
 			t_ch = tolower(t_ch);
-		if ((flags & WM_CASEFOLD) && ISUPPER(p_ch))
+		if ((flags & WM_CASEFOLD) && isupper(p_ch))
 			p_ch = tolower(p_ch);
 		switch (p_ch) {
 		case '\\':
@@ -133,11 +114,11 @@ static int dowild(const uchar *p, const uchar *text, unsigned int flags)
 				 */
 				if (!is_glob_special(*p)) {
 					p_ch = *p;
-					if ((flags & WM_CASEFOLD) && ISUPPER(p_ch))
+					if ((flags & WM_CASEFOLD) && isupper(p_ch))
 						p_ch = tolower(p_ch);
 					while ((t_ch = *text) != '\0' &&
 					       (match_slash || t_ch != '/')) {
-						if ((flags & WM_CASEFOLD) && ISUPPER(t_ch))
+						if ((flags & WM_CASEFOLD) && isupper(t_ch))
 							t_ch = tolower(t_ch);
 						if (t_ch == p_ch)
 							break;
@@ -186,7 +167,7 @@ static int dowild(const uchar *p, const uchar *text, unsigned int flags)
 					}
 					if (t_ch <= p_ch && t_ch >= prev_ch)
 						matched = 1;
-					else if ((flags & WM_CASEFOLD) && ISLOWER(t_ch)) {
+					else if ((flags & WM_CASEFOLD) && islower(t_ch)) {
 						uchar t_ch_upper = toupper(t_ch);
 						if (t_ch_upper <= p_ch && t_ch_upper >= prev_ch)
 							matched = 1;
@@ -208,42 +189,42 @@ static int dowild(const uchar *p, const uchar *text, unsigned int flags)
 						continue;
 					}
 					if (CC_EQ(s,i, "alnum")) {
-						if (ISALNUM(t_ch))
+						if (isalnum(t_ch))
 							matched = 1;
 					} else if (CC_EQ(s,i, "alpha")) {
-						if (ISALPHA(t_ch))
+						if (isalpha(t_ch))
 							matched = 1;
 					} else if (CC_EQ(s,i, "blank")) {
-						if (ISBLANK(t_ch))
+						if (isblank(t_ch))
 							matched = 1;
 					} else if (CC_EQ(s,i, "cntrl")) {
-						if (ISCNTRL(t_ch))
+						if (iscntrl(t_ch))
 							matched = 1;
 					} else if (CC_EQ(s,i, "digit")) {
-						if (ISDIGIT(t_ch))
+						if (isdigit(t_ch))
 							matched = 1;
 					} else if (CC_EQ(s,i, "graph")) {
-						if (ISGRAPH(t_ch))
+						if (isgraph(t_ch))
 							matched = 1;
 					} else if (CC_EQ(s,i, "lower")) {
-						if (ISLOWER(t_ch))
+						if (islower(t_ch))
 							matched = 1;
 					} else if (CC_EQ(s,i, "print")) {
-						if (ISPRINT(t_ch))
+						if (isprint(t_ch))
 							matched = 1;
 					} else if (CC_EQ(s,i, "punct")) {
-						if (ISPUNCT(t_ch))
+						if (ispunct(t_ch))
 							matched = 1;
 					} else if (CC_EQ(s,i, "space")) {
-						if (ISSPACE(t_ch))
+						if (isspace(t_ch))
 							matched = 1;
 					} else if (CC_EQ(s,i, "upper")) {
-						if (ISUPPER(t_ch))
+						if (isupper(t_ch))
 							matched = 1;
-						else if ((flags & WM_CASEFOLD) && ISLOWER(t_ch))
+						else if ((flags & WM_CASEFOLD) && islower(t_ch))
 							matched = 1;
 					} else if (CC_EQ(s,i, "xdigit")) {
-						if (ISXDIGIT(t_ch))
+						if (isxdigit(t_ch))
 							matched = 1;
 					} else /* malformed [:class:] string */
 						return WM_ABORT_ALL;
