@@ -1154,8 +1154,7 @@ test_expect_success '.gitmodules ignore=untracked suppresses submodules with unt
 	test_config diff.ignoreSubmodules dirty &&
 	git status >output &&
 	test_cmp expect output &&
-	git config --add -f .gitmodules submodule.subname.ignore untracked &&
-	git config --add -f .gitmodules submodule.subname.path sm &&
+	git config --add -f .gitmodules submodule.sm.ignore untracked &&
 	cat > expect-modified-gitmodules << EOF &&
 On branch main
 Your branch and '\''upstream'\'' have diverged,
@@ -1187,18 +1186,16 @@ Untracked files:
 EOF
 	git status >output &&
 	test_cmp expect-modified-gitmodules output &&
-	git config -f .gitmodules  --remove-section submodule.subname
+	git config -f .gitmodules --unset submodule.sm.ignore
 '
 
 test_expect_success '.git/config ignore=untracked suppresses submodules with untracked content' '
-	git config --add -f .gitmodules submodule.subname.ignore none &&
-	git config --add -f .gitmodules submodule.subname.path sm &&
-	git config --add submodule.subname.ignore untracked &&
-	git config --add submodule.subname.path sm &&
+	git config --add -f .gitmodules submodule.sm.ignore none &&
+	git config --add submodule.sm.ignore untracked &&
 	git status >output &&
 	test_cmp expect-modified-gitmodules output &&
-	git config --remove-section submodule.subname &&
-	git config --remove-section -f .gitmodules submodule.subname
+	git config --unset submodule.sm.ignore &&
+	git config -f .gitmodules --unset submodule.sm.ignore
 '
 
 test_expect_success '--ignore-submodules=dirty suppresses submodules with untracked content' '
@@ -1210,22 +1207,19 @@ test_expect_success '.gitmodules ignore=dirty suppresses submodules with untrack
 	test_config diff.ignoreSubmodules dirty &&
 	git status >output &&
 	! test -s actual &&
-	git config --add -f .gitmodules submodule.subname.ignore dirty &&
-	git config --add -f .gitmodules submodule.subname.path sm &&
+	git config --add -f .gitmodules submodule.sm.ignore dirty &&
 	git status >output &&
 	test_cmp expect-modified-gitmodules output &&
-	git config -f .gitmodules  --remove-section submodule.subname
+	git config -f .gitmodules --unset submodule.sm.ignore
 '
 
 test_expect_success '.git/config ignore=dirty suppresses submodules with untracked content' '
-	git config --add -f .gitmodules submodule.subname.ignore none &&
-	git config --add -f .gitmodules submodule.subname.path sm &&
-	git config --add submodule.subname.ignore dirty &&
-	git config --add submodule.subname.path sm &&
+	git config --add -f .gitmodules submodule.sm.ignore none &&
+	git config --add submodule.sm.ignore dirty &&
 	git status >output &&
 	test_cmp expect-modified-gitmodules output &&
-	git config --remove-section submodule.subname &&
-	git config -f .gitmodules  --remove-section submodule.subname
+	git config --unset submodule.sm.ignore &&
+	git config -f .gitmodules --unset submodule.sm.ignore
 '
 
 test_expect_success '--ignore-submodules=dirty suppresses submodules with modified content' '
@@ -1235,22 +1229,19 @@ test_expect_success '--ignore-submodules=dirty suppresses submodules with modifi
 '
 
 test_expect_success '.gitmodules ignore=dirty suppresses submodules with modified content' '
-	git config --add -f .gitmodules submodule.subname.ignore dirty &&
-	git config --add -f .gitmodules submodule.subname.path sm &&
+	git config --add -f .gitmodules submodule.sm.ignore dirty &&
 	git status >output &&
 	test_cmp expect-modified-gitmodules output &&
-	git config -f .gitmodules  --remove-section submodule.subname
+	git config -f .gitmodules --unset submodule.sm.ignore
 '
 
 test_expect_success '.git/config ignore=dirty suppresses submodules with modified content' '
-	git config --add -f .gitmodules submodule.subname.ignore none &&
-	git config --add -f .gitmodules submodule.subname.path sm &&
-	git config --add submodule.subname.ignore dirty &&
-	git config --add submodule.subname.path sm &&
+	git config --add -f .gitmodules submodule.sm.ignore none &&
+	git config --add submodule.sm.ignore dirty &&
 	git status >output &&
 	test_cmp expect-modified-gitmodules output &&
-	git config --remove-section submodule.subname &&
-	git config -f .gitmodules  --remove-section submodule.subname
+	git config --unset submodule.sm.ignore &&
+	git config -f .gitmodules --unset submodule.sm.ignore
 '
 
 test_expect_success "--ignore-submodules=untracked doesn't suppress submodules with modified content" '
@@ -1289,8 +1280,7 @@ EOF
 '
 
 test_expect_success ".gitmodules ignore=untracked doesn't suppress submodules with modified content" '
-	git config --add -f .gitmodules submodule.subname.ignore untracked &&
-	git config --add -f .gitmodules submodule.subname.path sm &&
+	git config --add -f .gitmodules submodule.sm.ignore untracked &&
 	cat > expect-modified-gitmodules << EOF &&
 On branch main
 Your branch and '\''upstream'\'' have diverged,
@@ -1324,18 +1314,16 @@ Untracked files:
 EOF
 	git status >output &&
 	test_cmp expect-modified-gitmodules output &&
-	git config -f .gitmodules  --remove-section submodule.subname
+	git config -f .gitmodules --unset submodule.sm.ignore
 '
 
 test_expect_success ".git/config ignore=untracked doesn't suppress submodules with modified content" '
-	git config --add -f .gitmodules submodule.subname.ignore none &&
-	git config --add -f .gitmodules submodule.subname.path sm &&
-	git config --add submodule.subname.ignore untracked &&
-	git config --add submodule.subname.path sm &&
+	git config --add -f .gitmodules submodule.sm.ignore none &&
+	git config --add submodule.sm.ignore untracked &&
 	git status >output &&
 	test_cmp expect-modified-gitmodules output &&
-	git config --remove-section submodule.subname &&
-	git config -f .gitmodules  --remove-section submodule.subname
+	git config --unset submodule.sm.ignore &&
+	git config -f .gitmodules --unset submodule.sm.ignore
 '
 
 head2=$(cd sm && git commit -q -m "2nd commit" foo && git rev-parse --short=7 --verify HEAD)
@@ -1415,22 +1403,19 @@ Untracked files:
 	untracked
 
 EOF
-	git config --add -f .gitmodules submodule.subname.ignore untracked &&
-	git config --add -f .gitmodules submodule.subname.path sm &&
+	git config --add -f .gitmodules submodule.sm.ignore untracked &&
 	git status >output &&
 	test_cmp expect-modified-gitmodules output &&
-	git config -f .gitmodules  --remove-section submodule.subname
+	git config -f .gitmodules --unset submodule.sm.ignore
 '
 
 test_expect_success ".git/config ignore=untracked doesn't suppress submodule summary" '
-	git config --add -f .gitmodules submodule.subname.ignore none &&
-	git config --add -f .gitmodules submodule.subname.path sm &&
-	git config --add submodule.subname.ignore untracked &&
-	git config --add submodule.subname.path sm &&
+	git config --add -f .gitmodules submodule.sm.ignore none &&
+	git config --add submodule.sm.ignore untracked &&
 	git status >output &&
 	test_cmp expect-modified-gitmodules output &&
-	git config --remove-section submodule.subname &&
-	git config -f .gitmodules  --remove-section submodule.subname
+	git config --unset submodule.sm.ignore &&
+	git config -f .gitmodules --unset submodule.sm.ignore
 '
 
 test_expect_success "--ignore-submodules=dirty doesn't suppress submodule summary" '
@@ -1438,22 +1423,19 @@ test_expect_success "--ignore-submodules=dirty doesn't suppress submodule summar
 	test_cmp expect output
 '
 test_expect_success ".gitmodules ignore=dirty doesn't suppress submodule summary" '
-	git config --add -f .gitmodules submodule.subname.ignore dirty &&
-	git config --add -f .gitmodules submodule.subname.path sm &&
+	git config --add -f .gitmodules submodule.sm.ignore dirty &&
 	git status >output &&
 	test_cmp expect-modified-gitmodules output &&
-	git config -f .gitmodules  --remove-section submodule.subname
+	git config -f .gitmodules --unset submodule.sm.ignore
 '
 
 test_expect_success ".git/config ignore=dirty doesn't suppress submodule summary" '
-	git config --add -f .gitmodules submodule.subname.ignore none &&
-	git config --add -f .gitmodules submodule.subname.path sm &&
-	git config --add submodule.subname.ignore dirty &&
-	git config --add submodule.subname.path sm &&
+	git config --add -f .gitmodules submodule.sm.ignore none &&
+	git config --add submodule.sm.ignore dirty &&
 	git status >output &&
 	test_cmp expect-modified-gitmodules output &&
-	git config --remove-section submodule.subname &&
-	git config -f .gitmodules  --remove-section submodule.subname
+	git config --unset submodule.sm.ignore &&
+	git config -f .gitmodules --unset submodule.sm.ignore
 '
 
 cat > expect << EOF
@@ -1552,22 +1534,19 @@ Untracked files:
 	untracked
 
 EOF
-	git config --add -f .gitmodules submodule.subname.ignore all &&
-	git config --add -f .gitmodules submodule.subname.path sm &&
+	git config --add -f .gitmodules submodule.sm.ignore all &&
 	git status > output &&
 	test_cmp expect output &&
-	git config -f .gitmodules  --remove-section submodule.subname
+	git config -f .gitmodules --unset submodule.sm.ignore
 '
 
 test_expect_success '.git/config ignore=all suppresses unstaged submodule summary' '
-	git config --add -f .gitmodules submodule.subname.ignore none &&
-	git config --add -f .gitmodules submodule.subname.path sm &&
-	git config --add submodule.subname.ignore all &&
-	git config --add submodule.subname.path sm &&
+	git config --add -f .gitmodules submodule.sm.ignore none &&
+	git config --add submodule.sm.ignore all &&
 	git status > output &&
 	test_cmp expect output &&
-	git config --remove-section submodule.subname &&
-	git config -f .gitmodules  --remove-section submodule.subname
+	git config --unset submodule.sm.ignore &&
+	git config -f .gitmodules --unset submodule.sm.ignore
 '
 
 test_expect_success 'setup of test environment' '
@@ -1633,9 +1612,8 @@ test_expect_success 'Restore default test environment' '
 '
 
 test_expect_success 'git commit will commit a staged but ignored submodule' '
-	git config --add -f .gitmodules submodule.subname.ignore all &&
-	git config --add -f .gitmodules submodule.subname.path sm &&
-	git config --add submodule.subname.ignore all &&
+	git config --add -f .gitmodules submodule.sm.ignore all &&
+	git config --add submodule.sm.ignore all &&
 	git status -s --ignore-submodules=dirty >output &&
 	test_i18ngrep "^M. sm" output &&
 	GIT_EDITOR="echo hello >>\"\$1\"" &&
@@ -1676,8 +1654,8 @@ test_expect_success 'git commit -m will commit a staged but ignored submodule' '
 	git commit -uno -m message &&
 	git status -s --ignore-submodules=dirty >output &&
 	test_i18ngrep ! "^M. sm" output &&
-	git config --remove-section submodule.subname &&
-	git config -f .gitmodules  --remove-section submodule.subname
+	git config --unset submodule.sm.ignore &&
+	git config -f .gitmodules --unset submodule.sm.ignore
 '
 
 test_expect_success 'show stash info with "--show-stash"' '
