@@ -138,10 +138,9 @@ test_expect_success 'diff.submodule does not affect plumbing' '
 	diff_cmp expected actual
 '
 
-commit_file sm1 &&
-head2=$(add_file sm1 foo3)
-
 test_expect_success 'modified submodule(forward)' '
+	commit_file sm1 &&
+	head2=$(add_file sm1 foo3) &&
 	git diff-index -p --submodule=diff HEAD >actual &&
 	cat >expected <<-EOF &&
 	Submodule sm1 $head1..$head2:
@@ -180,8 +179,8 @@ test_expect_success 'modified submodule(forward) --submodule' '
 	diff_cmp expected actual
 '
 
-fullhead2=$(cd sm1; git rev-parse --verify HEAD)
 test_expect_success 'modified submodule(forward) --submodule=short' '
+	fullhead2=$(git -C sm1 rev-parse --verify HEAD) &&
 	git diff --submodule=short >actual &&
 	cat >expected <<-EOF &&
 	diff --git a/sm1 b/sm1
@@ -195,14 +194,12 @@ test_expect_success 'modified submodule(forward) --submodule=short' '
 	diff_cmp expected actual
 '
 
-commit_file sm1 &&
-head3=$(
-	cd sm1 &&
-	git reset --hard HEAD~2 >/dev/null &&
-	git rev-parse --short --verify HEAD
-)
-
 test_expect_success 'modified submodule(backward)' '
+	commit_file sm1 &&
+	head3=$(
+		git -C sm1 reset --hard HEAD~2 >/dev/null &&
+		git -C sm1 rev-parse --short --verify HEAD
+	) &&
 	git diff-index -p --submodule=diff HEAD >actual &&
 	cat >expected <<-EOF &&
 	Submodule sm1 $head2..$head3 (rewind):
@@ -224,8 +221,8 @@ test_expect_success 'modified submodule(backward)' '
 	diff_cmp expected actual
 '
 
-head4=$(add_file sm1 foo4 foo5)
 test_expect_success 'modified submodule(backward and forward)' '
+	head4=$(add_file sm1 foo4 foo5) &&
 	git diff-index -p --submodule=diff HEAD >actual &&
 	cat >expected <<-EOF &&
 	Submodule sm1 $head2...$head4:
@@ -261,13 +258,15 @@ test_expect_success 'modified submodule(backward and forward)' '
 	diff_cmp expected actual
 '
 
-commit_file sm1 &&
-mv sm1 sm1-bak &&
-echo sm1 >sm1 &&
-head5=$(git hash-object sm1 | cut -c1-7) &&
-git add sm1 &&
-rm -f sm1 &&
-mv sm1-bak sm1
+test_expect_success 'setup - change sm1 to a blob' '
+	commit_file sm1 &&
+	mv sm1 sm1-bak &&
+	echo sm1 >sm1 &&
+	head5=$(git hash-object sm1 | cut -c1-7) &&
+	git add sm1 &&
+	rm -f sm1 &&
+	mv sm1-bak sm1
+'
 
 test_expect_success 'typechanged submodule(submodule->blob), --cached' '
 	git diff --submodule=diff --cached >actual &&
@@ -306,6 +305,7 @@ test_expect_success 'typechanged submodule(submodule->blob), --cached' '
 '
 
 test_expect_success 'typechanged submodule(submodule->blob)' '
+	test_when_finished rm -rf sm1 &&
 	git diff --submodule=diff >actual &&
 	cat >expected <<-EOF &&
 	diff --git a/sm1 b/sm1
@@ -341,9 +341,9 @@ test_expect_success 'typechanged submodule(submodule->blob)' '
 	diff_cmp expected actual
 '
 
-rm -rf sm1 &&
-git checkout-index sm1
 test_expect_success 'typechanged submodule(submodule->blob)' '
+	test_when_finished rm -f sm1 &&
+	git checkout-index sm1 &&
 	git diff-index -p --submodule=diff HEAD >actual &&
 	cat >expected <<-EOF &&
 	Submodule sm1 $head4...0000000 (submodule deleted)
@@ -358,10 +358,9 @@ test_expect_success 'typechanged submodule(submodule->blob)' '
 	diff_cmp expected actual
 '
 
-rm -f sm1 &&
-test_create_repo sm1 &&
-head6=$(add_file sm1 foo6 foo7)
 test_expect_success 'nonexistent commit' '
+	test_create_repo sm1 &&
+	head6=$(add_file sm1 foo6 foo7) &&
 	git diff-index -p --submodule=diff HEAD >actual &&
 	cat >expected <<-EOF &&
 	Submodule sm1 $head4...$head6 (commits not present)
@@ -369,8 +368,8 @@ test_expect_success 'nonexistent commit' '
 	diff_cmp expected actual
 '
 
-commit_file
 test_expect_success 'typechanged submodule(blob->submodule)' '
+	commit_file &&
 	git diff-index -p --submodule=diff HEAD >actual &&
 	cat >expected <<-EOF &&
 	diff --git a/sm1 b/sm1
@@ -399,8 +398,8 @@ test_expect_success 'typechanged submodule(blob->submodule)' '
 	diff_cmp expected actual
 '
 
-commit_file sm1 &&
 test_expect_success 'submodule is up to date' '
+	commit_file sm1 &&
 	head7=$(git -C sm1 rev-parse --short --verify HEAD) &&
 	git diff-index -p --submodule=diff HEAD >actual &&
 	test_must_be_empty actual
@@ -471,13 +470,13 @@ test_expect_success 'submodule contains untracked and modified content (dirty ig
 '
 
 test_expect_success 'submodule contains untracked and modified content (all ignored)' '
+	test_when_finished rm -f sm1/new-file &&
 	echo new > sm1/foo6 &&
 	git diff-index -p --ignore-submodules --submodule=diff HEAD >actual &&
 	test_must_be_empty actual
 '
 
 test_expect_success 'submodule contains modified content' '
-	rm -f sm1/new-file &&
 	git diff-index -p --submodule=diff HEAD >actual &&
 	cat >expected <<-EOF &&
 	Submodule sm1 contains modified content
@@ -492,9 +491,9 @@ test_expect_success 'submodule contains modified content' '
 	diff_cmp expected actual
 '
 
-(cd sm1; git commit -mchange foo6 >/dev/null) &&
-head8=$(cd sm1; git rev-parse --short --verify HEAD) &&
 test_expect_success 'submodule is modified' '
+	(git -C sm1 commit -mchange foo6 >/dev/null) &&
+	head8=$(git -C sm1 rev-parse --short --verify HEAD) &&
 	git diff-index -p --submodule=diff HEAD >actual &&
 	cat >expected <<-EOF &&
 	Submodule sm1 $head7..$head8:
@@ -616,6 +615,7 @@ test_expect_success 'modified submodule contains untracked and modified content 
 '
 
 test_expect_success 'modified submodule contains untracked and modified content (all ignored)' '
+	test_when_finished rm -f sm1/new-file &&
 	echo modification >> sm1/foo6 &&
 	git diff-index -p --ignore-submodules --submodule=diff HEAD >actual &&
 	test_must_be_empty actual
@@ -623,7 +623,7 @@ test_expect_success 'modified submodule contains untracked and modified content 
 
 # NOT OK
 test_expect_success 'modified submodule contains modified content' '
-	rm -f sm1/new-file &&
+	test_when_finished rm -rf sm1 &&
 	git diff-index -p --submodule=diff HEAD >actual &&
 	cat >expected <<-EOF &&
 	Submodule sm1 contains modified content
@@ -643,7 +643,6 @@ test_expect_success 'modified submodule contains modified content' '
 	diff_cmp expected actual
 '
 
-rm -rf sm1
 test_expect_success 'deleted submodule' '
 	git diff-index -p --submodule=diff HEAD >actual &&
 	cat >expected <<-EOF &&
@@ -703,13 +702,15 @@ test_expect_success 'path filter' '
 	diff_cmp expected actual
 '
 
-cat >.gitmodules <<-EOF
-[submodule "sm2"]
-	path = sm2
-	url = bogus_url
-EOF
-git add .gitmodules
-commit_file sm2 .gitmodules
+test_expect_success 'setup - construct .gitmodules' '
+	cat >.gitmodules <<-EOF &&
+	[submodule "sm2"]
+		path = sm2
+		url = bogus_url
+	EOF
+	git add .gitmodules &&
+	commit_file sm2 .gitmodules
+'
 
 test_expect_success 'given commit' '
 	git diff-index -p --submodule=diff HEAD^ >actual &&
@@ -779,9 +780,8 @@ test_expect_success 'diff --submodule=diff with .git file' '
 	diff_cmp expected actual
 '
 
-mv sm2 sm2-bak
-
 test_expect_success 'deleted submodule with .git file' '
+	mv sm2 sm2-bak &&
 	git diff-index -p --submodule=diff HEAD >actual &&
 	cat >expected <<-EOF &&
 	Submodule sm1 $head7...0000000 (submodule deleted)
@@ -804,9 +804,9 @@ test_expect_success 'deleted submodule with .git file' '
 	diff_cmp expected actual
 '
 
-echo submodule-to-blob>sm2
-
 test_expect_success 'typechanged(submodule->blob) submodule with .git file' '
+	test_when_finished "rm sm2 && mv sm2-bak sm2" &&
+	echo submodule-to-blob>sm2 &&
 	git diff-index -p --submodule=diff HEAD >actual &&
 	cat >expected <<-EOF &&
 	Submodule sm1 $head7...0000000 (submodule deleted)
@@ -835,9 +835,6 @@ test_expect_success 'typechanged(submodule->blob) submodule with .git file' '
 	EOF
 	diff_cmp expected actual
 '
-
-rm sm2
-mv sm2-bak sm2
 
 test_expect_success 'setup nested submodule' '
 	git -c protocol.file.allow=always -C sm2 submodule add ../sm2 nested &&
@@ -910,13 +907,11 @@ test_expect_success 'diff --submodule=diff recurses into nested submodules' '
 	diff_cmp expected actual
 '
 
-(cd sm2; commit_file nested)
-commit_file sm2
-head12=$(cd sm2; git rev-parse --short --verify HEAD)
-
-mv sm2 sm2-bak
-
 test_expect_success 'diff --submodule=diff recurses into deleted nested submodules' '
+	(cd sm2 && commit_file nested) &&
+	commit_file sm2 &&
+	head12=$(git -C sm2 rev-parse --short --verify HEAD) &&
+	mv sm2 sm2-bak &&
 	cat >expected <<-EOF &&
 	Submodule sm1 $head7...0000000 (submodule deleted)
 	Submodule sm2 $head12...0000000 (submodule deleted)
@@ -971,6 +966,8 @@ test_expect_success 'diff --submodule=diff recurses into deleted nested submodul
 	diff_cmp expected actual
 '
 
-mv sm2-bak sm2
+test_expect_success 'submodule cleanup' '
+	mv sm2-bak sm2
+'
 
 test_done
