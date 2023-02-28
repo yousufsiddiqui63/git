@@ -677,7 +677,7 @@ test_expect_success 'merging with triple rename across D/F conflict' '
 	echo content3 >sub2/file3 &&
 	mkdir simple &&
 	echo base >simple/bar &&
-	git add -A &&
+	git add -A --allow-embedded-repo &&
 	test_tick &&
 	git commit -m base &&
 
