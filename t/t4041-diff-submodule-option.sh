@@ -42,16 +42,27 @@ commit_file () {
 	git commit "$@" -m "Commit $*" >/dev/null
 }
 
-test_create_repo sm1 &&
-add_file . foo >/dev/null
-
-head1=$(add_file sm1 foo1 foo2)
-fullhead1=$(cd sm1; git rev-parse --verify HEAD)
+test_expect_success 'setup' '
+	test_create_repo sm1 &&
+	add_file . foo &&
+	head1=$(add_file sm1 foo1 foo2) &&
+	fullhead1=$(git -C sm1 rev-parse --verify HEAD)
+'
 
 test_expect_success 'added submodule' '
-	git add sm1 &&
+	git submodule add ./sm1 &&
+	gitmodules_hash1=$(git rev-parse --short $(git hash-object .gitmodules)) &&
 	git diff-index -p --submodule=log HEAD >actual &&
 	cat >expected <<-EOF &&
+	diff --git a/.gitmodules b/.gitmodules
+	new file mode 100644
+	index 0000000..$gitmodules_hash1
+	--- /dev/null
+	+++ b/.gitmodules
+	@@ -0,0 +1,3 @@
+	+[submodule "sm1"]
+	+	path = sm1
+	+	url = ./sm1
 	Submodule sm1 0000000...$head1 (new submodule)
 	EOF
 	test_cmp expected actual
@@ -62,6 +73,15 @@ test_expect_success 'added submodule, set diff.submodule' '
 	git add sm1 &&
 	git diff --cached >actual &&
 	cat >expected <<-EOF &&
+	diff --git a/.gitmodules b/.gitmodules
+	new file mode 100644
+	index 0000000..$gitmodules_hash1
+	--- /dev/null
+	+++ b/.gitmodules
+	@@ -0,0 +1,3 @@
+	+[submodule "sm1"]
+	+	path = sm1
+	+	url = ./sm1
 	Submodule sm1 0000000...$head1 (new submodule)
 	EOF
 	git config --unset diff.submodule &&
@@ -73,6 +93,15 @@ test_expect_success '--submodule=short overrides diff.submodule' '
 	git add sm1 &&
 	git diff --submodule=short --cached >actual &&
 	cat >expected <<-EOF &&
+	diff --git a/.gitmodules b/.gitmodules
+	new file mode 100644
+	index 0000000..$gitmodules_hash1
+	--- /dev/null
+	+++ b/.gitmodules
+	@@ -0,0 +1,3 @@
+	+[submodule "sm1"]
+	+	path = sm1
+	+	url = ./sm1
 	diff --git a/sm1 b/sm1
 	new file mode 160000
 	index 0000000..$head1
@@ -88,6 +117,15 @@ test_expect_success 'diff.submodule does not affect plumbing' '
 	test_config diff.submodule log &&
 	git diff-index -p HEAD >actual &&
 	cat >expected <<-EOF &&
+	diff --git a/.gitmodules b/.gitmodules
+	new file mode 100644
+	index 0000000..$gitmodules_hash1
+	--- /dev/null
+	+++ b/.gitmodules
+	@@ -0,0 +1,3 @@
+	+[submodule "sm1"]
+	+	path = sm1
+	+	url = ./sm1
 	diff --git a/sm1 b/sm1
 	new file mode 160000
 	index 0000000..$head1
@@ -99,12 +137,20 @@ test_expect_success 'diff.submodule does not affect plumbing' '
 	test_cmp expected actual
 '
 
-commit_file sm1 &&
-head2=$(add_file sm1 foo3)
-
 test_expect_success 'modified submodule(forward)' '
+	commit_file sm1 &&
+	head2=$(add_file sm1 foo3) &&
 	git diff-index -p --submodule=log HEAD >actual &&
 	cat >expected <<-EOF &&
+	diff --git a/.gitmodules b/.gitmodules
+	new file mode 100644
+	index 0000000..$gitmodules_hash1
+	--- /dev/null
+	+++ b/.gitmodules
+	@@ -0,0 +1,3 @@
+	+[submodule "sm1"]
+	+	path = sm1
+	+	url = ./sm1
 	Submodule sm1 $head1..$head2:
 	  > Add foo3 ($added foo3)
 	EOF
@@ -129,8 +175,8 @@ test_expect_success 'modified submodule(forward) --submodule' '
 	test_cmp expected actual
 '
 
-fullhead2=$(cd sm1; git rev-parse --verify HEAD)
 test_expect_success 'modified submodule(forward) --submodule=short' '
+	fullhead2=$(git -C sm1 rev-parse --verify HEAD) &&
 	git diff --submodule=short >actual &&
 	cat >expected <<-EOF &&
 	diff --git a/sm1 b/sm1
@@ -144,16 +190,25 @@ test_expect_success 'modified submodule(forward) --submodule=short' '
 	test_cmp expected actual
 '
 
-commit_file sm1 &&
-head3=$(
-	cd sm1 &&
-	git reset --hard HEAD~2 >/dev/null &&
-	git rev-parse --short --verify HEAD
-)
 
 test_expect_success 'modified submodule(backward)' '
+	commit_file sm1 &&
+	head3=$(
+		cd sm1 &&
+		git reset --hard HEAD~2 >/dev/null &&
+		git rev-parse --short --verify HEAD
+	) &&
 	git diff-index -p --submodule=log HEAD >actual &&
 	cat >expected <<-EOF &&
+	diff --git a/.gitmodules b/.gitmodules
+	new file mode 100644
+	index 0000000..$gitmodules_hash1
+	--- /dev/null
+	+++ b/.gitmodules
+	@@ -0,0 +1,3 @@
+	+[submodule "sm1"]
+	+	path = sm1
+	+	url = ./sm1
 	Submodule sm1 $head2..$head3 (rewind):
 	  < Add foo3 ($added foo3)
 	  < Add foo2 ($added foo2)
@@ -161,10 +216,19 @@ test_expect_success 'modified submodule(backward)' '
 	test_cmp expected actual
 '
 
-head4=$(add_file sm1 foo4 foo5)
 test_expect_success 'modified submodule(backward and forward)' '
+	head4=$(add_file sm1 foo4 foo5) &&
 	git diff-index -p --submodule=log HEAD >actual &&
 	cat >expected <<-EOF &&
+	diff --git a/.gitmodules b/.gitmodules
+	new file mode 100644
+	index 0000000..$gitmodules_hash1
+	--- /dev/null
+	+++ b/.gitmodules
+	@@ -0,0 +1,3 @@
+	+[submodule "sm1"]
+	+	path = sm1
+	+	url = ./sm1
 	Submodule sm1 $head2...$head4:
 	  > Add foo5 ($added foo5)
 	  > Add foo4 ($added foo4)
@@ -174,17 +238,28 @@ test_expect_success 'modified submodule(backward and forward)' '
 	test_cmp expected actual
 '
 
-commit_file sm1 &&
-mv sm1 sm1-bak &&
-echo sm1 >sm1 &&
-head5=$(git hash-object sm1 | cut -c1-7) &&
-git add sm1 &&
-rm -f sm1 &&
-mv sm1-bak sm1
+test_expect_success 'setup - change sm1 to a blob' '
+	commit_file sm1 &&
+	mv sm1 sm1-bak &&
+	echo sm1 >sm1 &&
+	head5=$(git hash-object sm1 | cut -c1-7) &&
+	git add sm1 &&
+	rm -f sm1 &&
+	mv sm1-bak sm1
+'
 
 test_expect_success 'typechanged submodule(submodule->blob), --cached' '
 	git diff --submodule=log --cached >actual &&
 	cat >expected <<-EOF &&
+	diff --git a/.gitmodules b/.gitmodules
+	new file mode 100644
+	index 0000000..$gitmodules_hash1
+	--- /dev/null
+	+++ b/.gitmodules
+	@@ -0,0 +1,3 @@
+	+[submodule "sm1"]
+	+	path = sm1
+	+	url = ./sm1
 	Submodule sm1 $head4...0000000 (submodule deleted)
 	diff --git a/sm1 b/sm1
 	new file mode 100644
@@ -198,6 +273,7 @@ test_expect_success 'typechanged submodule(submodule->blob), --cached' '
 '
 
 test_expect_success 'typechanged submodule(submodule->blob)' '
+	test_when_finished rm -rf sm1 &&
 	git diff --submodule=log >actual &&
 	cat >expected <<-EOF &&
 	diff --git a/sm1 b/sm1
@@ -212,11 +288,20 @@ test_expect_success 'typechanged submodule(submodule->blob)' '
 	test_cmp expected actual
 '
 
-rm -rf sm1 &&
-git checkout-index sm1
 test_expect_success 'typechanged submodule(submodule->blob)' '
+	test_when_finished rm -f sm1 &&
+	git checkout-index sm1 &&
 	git diff-index -p --submodule=log HEAD >actual &&
 	cat >expected <<-EOF &&
+	diff --git a/.gitmodules b/.gitmodules
+	new file mode 100644
+	index 0000000..$gitmodules_hash1
+	--- /dev/null
+	+++ b/.gitmodules
+	@@ -0,0 +1,3 @@
+	+[submodule "sm1"]
+	+	path = sm1
+	+	url = ./sm1
 	Submodule sm1 $head4...0000000 (submodule deleted)
 	diff --git a/sm1 b/sm1
 	new file mode 100644
@@ -229,20 +314,28 @@ test_expect_success 'typechanged submodule(submodule->blob)' '
 	test_cmp expected actual
 '
 
-rm -f sm1 &&
-test_create_repo sm1 &&
-head6=$(add_file sm1 foo6 foo7)
-fullhead6=$(cd sm1; git rev-parse --verify HEAD)
 test_expect_success 'nonexistent commit' '
+	test_create_repo sm1 &&
+	head6=$(add_file sm1 foo6 foo7) &&
+	fullhead6=$(git -C sm1 rev-parse --verify HEAD) &&
 	git diff-index -p --submodule=log HEAD >actual &&
 	cat >expected <<-EOF &&
+	diff --git a/.gitmodules b/.gitmodules
+	new file mode 100644
+	index 0000000..$gitmodules_hash1
+	--- /dev/null
+	+++ b/.gitmodules
+	@@ -0,0 +1,3 @@
+	+[submodule "sm1"]
+	+	path = sm1
+	+	url = ./sm1
 	Submodule sm1 $head4...$head6 (commits not present)
 	EOF
 	test_cmp expected actual
 '
 
-commit_file
 test_expect_success 'typechanged submodule(blob->submodule)' '
+	commit_file &&
 	git diff-index -p --submodule=log HEAD >actual &&
 	cat >expected <<-EOF &&
 	diff --git a/sm1 b/sm1
@@ -257,8 +350,8 @@ test_expect_success 'typechanged submodule(blob->submodule)' '
 	test_cmp expected actual
 '
 
-commit_file sm1 &&
 test_expect_success 'submodule is up to date' '
+	commit_file sm1 &&
 	git diff-index -p --submodule=log HEAD >actual &&
 	test_must_be_empty actual
 '
@@ -313,13 +406,13 @@ test_expect_success 'submodule contains untracked and modified content (dirty ig
 '
 
 test_expect_success 'submodule contains untracked and modified content (all ignored)' '
+	test_when_finished rm -f sm1/new-file &&
 	echo new > sm1/foo6 &&
 	git diff-index -p --ignore-submodules --submodule=log HEAD >actual &&
 	test_must_be_empty actual
 '
 
 test_expect_success 'submodule contains modified content' '
-	rm -f sm1/new-file &&
 	git diff-index -p --submodule=log HEAD >actual &&
 	cat >expected <<-EOF &&
 	Submodule sm1 contains modified content
@@ -327,9 +420,9 @@ test_expect_success 'submodule contains modified content' '
 	test_cmp expected actual
 '
 
-(cd sm1; git commit -mchange foo6 >/dev/null) &&
-head8=$(cd sm1; git rev-parse --short --verify HEAD) &&
 test_expect_success 'submodule is modified' '
+	(cd sm1 && git commit -mchange foo6 >/dev/null) &&
+	head8=$(cd sm1 && git rev-parse --short --verify HEAD) &&
 	git diff-index -p --submodule=log HEAD >actual &&
 	cat >expected <<-EOF &&
 	Submodule sm1 $head6..$head8:
@@ -406,13 +499,14 @@ test_expect_success 'modified submodule contains untracked and modified content 
 '
 
 test_expect_success 'modified submodule contains untracked and modified content (all ignored)' '
+	test_when_finished rm -f sm1/new-file &&
 	echo modification >> sm1/foo6 &&
 	git diff-index -p --ignore-submodules --submodule=log HEAD >actual &&
 	test_must_be_empty actual
 '
 
 test_expect_success 'modified submodule contains modified content' '
-	rm -f sm1/new-file &&
+	test_when_finished rm -rf sm1 &&
 	git diff-index -p --submodule=log HEAD >actual &&
 	cat >expected <<-EOF &&
 	Submodule sm1 contains modified content
@@ -422,7 +516,6 @@ test_expect_success 'modified submodule contains modified content' '
 	test_cmp expected actual
 '
 
-rm -rf sm1
 test_expect_success 'deleted submodule' '
 	git diff-index -p --submodule=log HEAD >actual &&
 	cat >expected <<-EOF &&
@@ -434,12 +527,24 @@ test_expect_success 'deleted submodule' '
 test_expect_success 'create second submodule' '
 	test_create_repo sm2 &&
 	head7=$(add_file sm2 foo8 foo9) &&
-	git add sm2
+	git submodule add ./sm2 &&
+	gitmodules_hash2=$(git rev-parse --short $(git hash-object .gitmodules))
 '
 
 test_expect_success 'multiple submodules' '
 	git diff-index -p --submodule=log HEAD >actual &&
 	cat >expected <<-EOF &&
+	diff --git a/.gitmodules b/.gitmodules
+	index $gitmodules_hash1..$gitmodules_hash2 100644
+	--- a/.gitmodules
+	+++ b/.gitmodules
+	@@ -1,3 +1,6 @@
+	 [submodule "sm1"]
+		path = sm1
+		url = ./sm1
+	+[submodule "sm2"]
+	+	path = sm2
+	+	url = ./sm2
 	Submodule sm1 $head6...0000000 (submodule deleted)
 	Submodule sm2 0000000...$head7 (new submodule)
 	EOF
@@ -454,10 +559,21 @@ test_expect_success 'path filter' '
 	test_cmp expected actual
 '
 
-commit_file sm2
 test_expect_success 'given commit' '
+	commit_file sm2 &&
 	git diff-index -p --submodule=log HEAD^ >actual &&
 	cat >expected <<-EOF &&
+	diff --git a/.gitmodules b/.gitmodules
+	index $gitmodules_hash1..$gitmodules_hash2 100644
+	--- a/.gitmodules
+	+++ b/.gitmodules
+	@@ -1,3 +1,6 @@
+	 [submodule "sm1"]
+		path = sm1
+		url = ./sm1
+	+[submodule "sm2"]
+	+	path = sm2
+	+	url = ./sm2
 	Submodule sm1 $head6...0000000 (submodule deleted)
 	Submodule sm2 0000000...$head7 (new submodule)
 	EOF
@@ -467,17 +583,38 @@ test_expect_success 'given commit' '
 test_expect_success 'given commit --submodule' '
 	git diff-index -p --submodule HEAD^ >actual &&
 	cat >expected <<-EOF &&
+	diff --git a/.gitmodules b/.gitmodules
+	index $gitmodules_hash1..$gitmodules_hash2 100644
+	--- a/.gitmodules
+	+++ b/.gitmodules
+	@@ -1,3 +1,6 @@
+	 [submodule "sm1"]
+		path = sm1
+		url = ./sm1
+	+[submodule "sm2"]
+	+	path = sm2
+	+	url = ./sm2
 	Submodule sm1 $head6...0000000 (submodule deleted)
 	Submodule sm2 0000000...$head7 (new submodule)
 	EOF
 	test_cmp expected actual
 '
 
-fullhead7=$(cd sm2; git rev-parse --verify HEAD)
-
 test_expect_success 'given commit --submodule=short' '
+	fullhead7=$(git -C sm2 rev-parse --verify HEAD) &&
 	git diff-index -p --submodule=short HEAD^ >actual &&
 	cat >expected <<-EOF &&
+	diff --git a/.gitmodules b/.gitmodules
+	index $gitmodules_hash1..$gitmodules_hash2 100644
+	--- a/.gitmodules
+	+++ b/.gitmodules
+	@@ -1,3 +1,6 @@
+	 [submodule "sm1"]
+		path = sm1
+		url = ./sm1
+	+[submodule "sm2"]
+	+	path = sm2
+	+	url = ./sm2
 	diff --git a/sm1 b/sm1
 	deleted file mode 160000
 	index $head6..0000000
@@ -506,6 +643,17 @@ test_expect_success 'setup .git file for sm2' '
 test_expect_success 'diff --submodule with .git file' '
 	git diff --submodule HEAD^ >actual &&
 	cat >expected <<-EOF &&
+	diff --git a/.gitmodules b/.gitmodules
+	index $gitmodules_hash1..$gitmodules_hash2 100644
+	--- a/.gitmodules
+	+++ b/.gitmodules
+	@@ -1,3 +1,6 @@
+	 [submodule "sm1"]
+		path = sm1
+		url = ./sm1
+	+[submodule "sm2"]
+	+	path = sm2
+	+	url = ./sm2
 	Submodule sm1 $head6...0000000 (submodule deleted)
 	Submodule sm2 0000000...$head7 (new submodule)
 	EOF
@@ -524,7 +672,7 @@ test_expect_success 'diff --submodule with objects referenced by alternates' '
 	(cd super &&
 		git clone -s ../sub_alt sub &&
 		git init &&
-		git add sub &&
+		git submodule add ./sub &&
 		git commit -m "sub a"
 	) &&
 	(cd sub_alt &&

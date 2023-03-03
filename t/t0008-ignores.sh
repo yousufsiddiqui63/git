@@ -191,7 +191,7 @@ test_expect_success 'setup' '
 		git add a &&
 		git commit -m"commit in submodule"
 	) &&
-	git add a/submodule &&
+	git add --allow-embedded-repo a/submodule &&
 	cat <<-\EOF >.gitignore &&
 		one
 		ignored-*

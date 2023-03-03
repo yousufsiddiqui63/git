@@ -311,6 +311,7 @@ N_("The following paths are ignored by one of your .gitignore files:\n");
 static int verbose, show_only, ignored_too, refresh_only;
 static int ignore_add_errors, intent_to_add, ignore_missing;
 static int warn_on_embedded_repo = 1;
+static int allow_embedded_repo = 0;
 
 #define ADDREMOVE_DEFAULT 1
 static int addremove = ADDREMOVE_DEFAULT;
@@ -349,6 +350,8 @@ static struct option builtin_add_options[] = {
 		   N_("override the executable bit of the listed files")),
 	OPT_HIDDEN_BOOL(0, "warn-embedded-repo", &warn_on_embedded_repo,
 			N_("warn when adding an embedded repository")),
+	OPT_HIDDEN_BOOL(0, "allow-embedded-repo", &allow_embedded_repo,
+			N_("allow adding an embedded repository")),
 	OPT_PATHSPEC_FROM_FILE(&pathspec_from_file),
 	OPT_PATHSPEC_FILE_NUL(&pathspec_file_nul),
 	OPT_END(),
@@ -366,48 +369,53 @@ static int add_config(const char *var, const char *value, void *cb)
 }
 
 static const char embedded_advice[] = N_(
-"You've added another git repository inside your current repository.\n"
+"You attempted to add another git repository inside your current repository.\n"
 "Clones of the outer repository will not contain the contents of\n"
 "the embedded repository and will not know how to obtain it.\n"
 "If you meant to add a submodule, use:\n"
 "\n"
 "	git submodule add <url> %s\n"
 "\n"
-"If you added this path by mistake, you can remove it from the\n"
-"index with:\n"
+"See \"git help submodule\" for more information.\n"
 "\n"
-"	git rm --cached %s\n"
+"If you cannot use submodules, you may bypass this check with:\n"
 "\n"
-"See \"git help submodule\" for more information."
+"	git add --allow-embedded-repo %s\n"
 );
 
-static void check_embedded_repo(const char *path)
+static int check_embedded_repo(const char *path)
 {
+	int ret = 0;
 	struct strbuf name = STRBUF_INIT;
 	static int adviced_on_embedded_repo = 0;
 
-	if (!warn_on_embedded_repo)
-		return;
+	if (allow_embedded_repo)
+		goto cleanup;
 	if (!ends_with(path, "/"))
-		return;
+		goto cleanup;
+
+	ret = 1;
 
 	/* Drop trailing slash for aesthetics */
 	strbuf_addstr(&name, path);
 	strbuf_strip_suffix(&name, "/");
 
-	warning(_("adding embedded git repository: %s"), name.buf);
+	error(_("cannot add embedded git repository: %s"), name.buf);
 	if (!adviced_on_embedded_repo &&
-	    advice_enabled(ADVICE_ADD_EMBEDDED_REPO)) {
+		warn_on_embedded_repo &&
+		advice_enabled(ADVICE_ADD_EMBEDDED_REPO)) {
 		advise(embedded_advice, name.buf, name.buf);
 		adviced_on_embedded_repo = 1;
 	}
 
+cleanup:
 	strbuf_release(&name);
+	return ret;
 }
 
 static int add_files(struct dir_struct *dir, int flags)
 {
-	int i, exit_status = 0;
+	int i, exit_status = 0, embedded_repo = 0;
 	struct string_list matched_sparse_paths = STRING_LIST_INIT_NODUP;
 
 	if (dir->ignored_nr) {
@@ -433,9 +441,12 @@ static int add_files(struct dir_struct *dir, int flags)
 				die(_("adding files failed"));
 			exit_status = 1;
 		} else {
-			check_embedded_repo(dir->entries[i]->name);
+			embedded_repo |= check_embedded_repo(dir->entries[i]->name);
 		}
 	}
+
+	if (embedded_repo)
+		die(_("refusing to add embedded git repositories"));
 
 	if (matched_sparse_paths.nr) {
 		advise_on_updating_sparse_paths(&matched_sparse_paths);

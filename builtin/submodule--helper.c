@@ -3151,7 +3151,7 @@ static void configure_added_submodule(struct add_data *add_data)
 
 	add_submod.git_cmd = 1;
 	strvec_pushl(&add_submod.args, "add",
-		     "--no-warn-embedded-repo", NULL);
+		     "--allow-embedded-repo", NULL);
 	if (add_data->force)
 		strvec_push(&add_submod.args, "--force");
 	strvec_pushl(&add_submod.args, "--", add_data->sm_path, NULL);
@@ -3339,7 +3339,7 @@ static int module_add(int argc, const char **argv, const char *prefix)
 		cp.git_cmd = 1;
 		cp.no_stdout = 1;
 		strvec_pushl(&cp.args, "add", "--dry-run", "--ignore-missing",
-			     "--no-warn-embedded-repo", add_data.sm_path, NULL);
+			     "--allow-embedded-repo", add_data.sm_path, NULL);
 		if ((ret = pipe_command(&cp, NULL, 0, NULL, 0, &sb, 0))) {
 			strbuf_complete_line(&sb);
 			fputs(sb.buf, stderr);

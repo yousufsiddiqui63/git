@@ -10,31 +10,36 @@ test_expect_success 'create embedded repository' '
 	test_commit -C embed one
 '
 
-test_expect_success 'git-add on embedded repository warns' '
-	test_when_finished "git rm --cached -f embed" &&
-	git add embed 2>stderr &&
-	test_i18ngrep warning stderr
+test_expect_success 'git-add on embedded repository dies' '
+	test_must_fail git add embed 2>stderr &&
+	test_i18ngrep fatal stderr
 '
 
-test_expect_success '--no-warn-embedded-repo suppresses warning' '
+test_expect_success '--allow-embedded-repo adds embedded repository and suppresses error message' '
 	test_when_finished "git rm --cached -f embed" &&
-	git add --no-warn-embedded-repo embed 2>stderr &&
-	test_i18ngrep ! warning stderr
+	git add --allow-embedded-repo embed 2>stderr &&
+	test_i18ngrep ! fatal stderr
 '
 
-test_expect_success 'no warning when updating entry' '
+test_expect_success '--no-warn-embedded-repo dies and suppresses advice' '
+	test_must_fail git add --no-warn-embedded-repo embed 2>stderr &&
+	test_i18ngrep ! hint stderr &&
+	test_i18ngrep fatal stderr
+'
+
+test_expect_success 'no error message when updating entry' '
 	test_when_finished "git rm --cached -f embed" &&
-	git add embed &&
+	git add --allow-embedded-repo embed &&
 	git -C embed commit --allow-empty -m two &&
 	git add embed 2>stderr &&
-	test_i18ngrep ! warning stderr
+	test_i18ngrep ! fatal stderr
 '
 
-test_expect_success 'submodule add does not warn' '
+test_expect_success 'submodule add neither fails nor issues error message' '
 	test_when_finished "git rm -rf submodule .gitmodules" &&
 	git -c protocol.file.allow=always \
 		submodule add ./embed submodule 2>stderr &&
-	test_i18ngrep ! warning stderr
+	test_i18ngrep ! fatal stderr
 '
 
 test_done

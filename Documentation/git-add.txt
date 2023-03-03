@@ -176,12 +176,17 @@ for "git add --no-all <pathspec>...", i.e. ignored removed files.
 	be ignored, no matter if they are already present in the work
 	tree or not.
 
---no-warn-embedded-repo::
-	By default, `git add` will warn when adding an embedded
+--allow-embedded-repo::
+	By default, `git add` will error out when adding an embedded
 	repository to the index without using `git submodule add` to
-	create an entry in `.gitmodules`. This option will suppress the
-	warning (e.g., if you are manually performing operations on
-	submodules).
+	create an entry in `.gitmodules`. This option will allow the
+	embedded repository to be added. (e.g., if you are manually
+	performing operations on submodules).
+
+--no-warn-embedded-repo::
+	This option is deprecated in favor of '--add-embedded-repo'.
+	Passing this option still suppresses advice but does not bypass
+	the error.
 
 --renormalize::
 	Apply the "clean" process freshly to all tracked files to
