@@ -101,6 +101,12 @@ test_rebase_am_only () {
 		grep -e --no-autosquash err
 	"
 
+	test_expect_success "$opt incompatible with rebase.merges" "
+		git checkout B^0 &&
+		test_must_fail git -c rebase.merges=true rebase $opt A 2>err &&
+		grep -e --no-rebase-merges err
+	"
+
 	test_expect_success "$opt incompatible with rebase.updateRefs" "
 		git checkout B^0 &&
 		test_must_fail git -c rebase.updateRefs=true rebase $opt A 2>err &&
@@ -111,6 +117,12 @@ test_rebase_am_only () {
 		test_when_finished \"git reset --hard B^0\" &&
 		git checkout B^0 &&
 		git -c rebase.autosquash=true rebase --no-autosquash $opt A
+	"
+
+	test_expect_success "$opt okay with overridden rebase.merges" "
+		test_when_finished \"git reset --hard B^0\" &&
+		git checkout B^0 &&
+		git -c rebase.merges=true rebase --no-rebase-merges $opt A
 	"
 
 	test_expect_success "$opt okay with overridden rebase.updateRefs" "
